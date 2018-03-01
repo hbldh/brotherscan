@@ -8,6 +8,8 @@ name = "pypi"
 [packages]
 
 "pyinsane2" = "*"
+pillow = "*"
+tqdm = "*"
 
 
 [dev-packages]
