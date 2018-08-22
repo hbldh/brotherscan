@@ -7,6 +7,7 @@ Adapted much of the code from pyinsane2's example files.
 """
 
 import os
+import re
 import time
 import pathlib
 import argparse
@@ -24,8 +25,10 @@ def setup_device(device_name=None, resolution=300, mode='Gray'):
         device = pyinsane2.Scanner(name='brother4:net1;dev0')
     else:
         devices = pyinsane2.get_devices()
-        assert (len(devices) > 0)
-        device = devices[0]
+        print("Scanners found:")
+        for i, d in enumerate(devices):
+            print(f"[{i}] {d}")
+        device = devices[int(input("Select which one to use: "))]
 
     print(f"Will use: {device}")
     pyinsane2.set_scanner_opt(device, 'source', ['Auto', 'FlatBed'])
@@ -71,8 +74,8 @@ def main():
                         default=None,
                         help='Name of device to use for scanning.')
     parser.add_argument('-t', '--timeout', type=int,
-                        default=5,
-                        help='Prefix for saved files.')
+                        default=0,
+                        help='Time between scans. 0 means wait for user input.')
     args = parser.parse_args()
 
     dest_dir = pathlib.Path(os.path.expanduser(args.dest_dir)).absolute()
@@ -81,12 +84,18 @@ def main():
     device = setup_device(args.device, 300, 'Gray')
 
     try:
-        n = 0
+        preexisting = [int(re.search(args.prefix + '_([\d]{3}).pdf',
+                                     str(x)).groups()[0]) for x in
+                       dest_dir.glob(args.prefix + "*.pdf")]
+        n = max(preexisting) + 1 if preexisting else 0
         while True:
             n += 1
             scan(device, f"{base_name}_{n:03d}.pdf")
-            for _ in tqdm.tqdm(range(int(args.timeout / 0.1)), desc="Sleeping"):
-                time.sleep(0.1)
+            if args.timeout:
+                for _ in tqdm.tqdm(range(int(args.timeout / 0.1)), desc="Sleeping"):
+                    time.sleep(0.1)
+            else:
+                input('Press Enter to start scanning...')
     except (Exception, KeyboardInterrupt):
         pass
     finally:
