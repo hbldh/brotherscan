@@ -17,12 +17,12 @@ import tqdm
 import pyinsane2
 
 
-def setup_device(device_name=None, resolution=300, mode='Gray'):
+def setup_device(device_name=None, resolution=300, mode="Gray"):
 
     pyinsane2.init()
 
     if device_name is not None:
-        device = pyinsane2.Scanner(name='brother4:net1;dev0')
+        device = pyinsane2.Scanner(name="brother4:net1;dev0")
     else:
         devices = pyinsane2.get_devices()
         print("Scanners found:")
@@ -31,13 +31,13 @@ def setup_device(device_name=None, resolution=300, mode='Gray'):
         device = devices[int(input("Select which one to use: "))]
 
     print(f"Will use: {device}")
-    pyinsane2.set_scanner_opt(device, 'source', ['Auto', 'FlatBed'])
-    pyinsane2.set_scanner_opt(device, 'resolution', [resolution, ])
+    pyinsane2.set_scanner_opt(device, "source", ["Auto", "FlatBed"])
+    pyinsane2.set_scanner_opt(device, "resolution", [resolution])
     try:
         pyinsane2.maximize_scan_area(device)
     except Exception as exc:
         print(f"Failed to maximize scan area: {exc}")
-    pyinsane2.set_scanner_opt(device, 'mode', [mode, ])
+    pyinsane2.set_scanner_opt(device, "mode", [mode])
 
     return device
 
@@ -65,28 +65,42 @@ def scan(device, output_file):
 def main():
     parser = argparse.ArgumentParser(
         description="Scanning Program for rapid scanning with "
-                    "manual switching on a flatbed.")
-    parser.add_argument('dest_dir', type=str,
-                        help='Directory to store scans in')
-    parser.add_argument('-p', '--prefix', type=str, default='brotherscan',
-                        help='Prefix for saved files.')
-    parser.add_argument('-d', '--device', type=str,
-                        default=None,
-                        help='Name of device to use for scanning.')
-    parser.add_argument('-t', '--timeout', type=int,
-                        default=0,
-                        help='Time between scans. 0 means wait for user input.')
+        "manual switching on a flatbed."
+    )
+    parser.add_argument("dest_dir", type=str, help="Directory to store scans in")
+    parser.add_argument(
+        "-p",
+        "--prefix",
+        type=str,
+        default="brotherscan",
+        help="Prefix for saved files.",
+    )
+    parser.add_argument(
+        "-d",
+        "--device",
+        type=str,
+        default=None,
+        help="Name of device to use for scanning.",
+    )
+    parser.add_argument(
+        "-t",
+        "--timeout",
+        type=int,
+        default=0,
+        help="Time between scans. 0 means wait for user input.",
+    )
     args = parser.parse_args()
 
     dest_dir = pathlib.Path(os.path.expanduser(args.dest_dir)).absolute()
     dest_dir.mkdir(exist_ok=True)
     base_name = dest_dir.joinpath(args.prefix)
-    device = setup_device(args.device, 300, 'Gray')
+    device = setup_device(args.device, 300, "Gray")
 
     try:
-        preexisting = [int(re.search(args.prefix + '_([\d]{3}).pdf',
-                                     str(x)).groups()[0]) for x in
-                       dest_dir.glob(args.prefix + "*.pdf")]
+        preexisting = [
+            int(re.search(args.prefix + "_([\d]{3}).pdf", str(x)).groups()[0])
+            for x in dest_dir.glob(args.prefix + "*.pdf")
+        ]
         n = max(preexisting) + 1 if preexisting else 0
         while True:
             n += 1
@@ -95,7 +109,7 @@ def main():
                 for _ in tqdm.tqdm(range(int(args.timeout / 0.1)), desc="Sleeping"):
                     time.sleep(0.1)
             else:
-                input('Press Enter to start scanning...')
+                input("Press Enter to start scanning...")
     except (Exception, KeyboardInterrupt):
         pass
     finally:
